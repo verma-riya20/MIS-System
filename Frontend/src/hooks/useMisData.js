@@ -1,7 +1,7 @@
 // src/hooks/useMisData.js
 import { useState, useEffect } from "react";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://mis-system-aysc.onrender.com";
 
 // Same fallback colors as before, in case /api/schemes is slow to load
 const FALLBACK_COLORS = ["#534AB7", "#185FA5", "#1D9E75", "#993556", "#639922", "#D85A30"];
