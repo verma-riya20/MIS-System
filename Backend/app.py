@@ -30,7 +30,13 @@ def home():
         "status": "running",
         "message": "MIS Backend API"
     })
-
+@app.route('/env-check')
+def env_check():
+    return {
+        "DB_HOST": os.getenv("DB_HOST"),
+        "DB_USER": os.getenv("DB_USER"),
+        "DB_DATABASE": os.getenv("DB_DATABASE")
+    }
 
 # ── DB CONFIG ─────────────────────────────────────────────
 DB_CONFIG = dict(
