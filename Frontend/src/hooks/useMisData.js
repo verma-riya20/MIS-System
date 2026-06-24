@@ -25,8 +25,8 @@ export function useMisData() {
         setError(null);
 
         const [projectsRes, schemesRes] = await Promise.all([
-          fetch(`${API_BASE}/projects`),
-          fetch(`${API_BASE}/schemes`),
+          fetch(`${API_BASE}/api/projects`),
+          fetch(`${API_BASE}/api/schemes`),
         ]);
 
         if (!projectsRes.ok || !schemesRes.ok) {
