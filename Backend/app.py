@@ -13,6 +13,7 @@
     4. API runs at http://localhost:5000
 =============================================================
 """
+import os
 
 from flask import Flask, jsonify
 from flask_cors import CORS
@@ -24,10 +25,11 @@ CORS(app)  # allow your Vite dev server (localhost:5173) to call this API
 
 # ── DB CONFIG ─────────────────────────────────────────────
 DB_CONFIG = dict(
-    host     = 'localhost',
-    user     = 'root',
-    password = 'Riya@2005',   # <-- change this
-    database = 'mis_projects'
+    host     = os.environ.get("DB_HOST", "sql12.freesqldatabase.com"),
+    user     = os.environ.get("DB_USER", "sql12831501"),
+    password = os.environ.get("DB_PASSWORD", "TqtrjbEikb"),
+    database = os.environ.get("DB_DATABASE", "sql12831501"),
+    ssl_disabled = True
 )
 
 pool = pooling.MySQLConnectionPool(pool_name="mis_pool", pool_size=5, **DB_CONFIG)
@@ -113,13 +115,9 @@ def all_projects():
 
     return jsonify(result)
 
-
 if __name__ == '__main__':
-    print("=" * 55)
-    print("  MIS Dashboard API")
-    print("  Running at: http://localhost:5000")
-    print("  Endpoints:")
-    print("    GET /api/schemes")
-    print("    GET /api/projects")
-    print("=" * 55)
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
+
+
+
