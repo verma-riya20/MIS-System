@@ -14,7 +14,8 @@
 =============================================================
 """
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask, jsonify
 from flask_cors import CORS
 import mysql.connector
@@ -25,11 +26,11 @@ CORS(app)  # allow your Vite dev server (localhost:5173) to call this API
 
 # ── DB CONFIG ─────────────────────────────────────────────
 DB_CONFIG = dict(
-    host     = os.environ.get("DB_HOST", "sql12.freesqldatabase.com"),
-    user     = os.environ.get("DB_USER", "sql12831501"),
-    password = os.environ.get("DB_PASSWORD", "TqtrjbEikb"),
-    database = os.environ.get("DB_DATABASE", "sql12831501"),
-    ssl_disabled = True
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_DATABASE"),
+    ssl_disabled=True
 )
 
 pool = pooling.MySQLConnectionPool(pool_name="mis_pool", pool_size=5, **DB_CONFIG)
