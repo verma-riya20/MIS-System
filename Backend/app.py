@@ -24,6 +24,14 @@ from mysql.connector import pooling
 app = Flask(__name__)
 CORS(app)  # allow your Vite dev server (localhost:5173) to call this API
 
+@app.route('/')
+def home():
+    return jsonify({
+        "status": "running",
+        "message": "MIS Backend API"
+    })
+
+
 # ── DB CONFIG ─────────────────────────────────────────────
 DB_CONFIG = dict(
     host=os.getenv("DB_HOST"),
