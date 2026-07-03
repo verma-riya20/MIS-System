@@ -44,7 +44,8 @@ DB_CONFIG = dict(
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     database=os.getenv("DB_DATABASE"),
-    ssl_disabled=True
+    port     = int(os.getenv("DB_PORT", 21716)),
+    ssl_disabled = False   # ← change True to False (Aiven requires SSL)
 )
 
 pool = pooling.MySQLConnectionPool(pool_name="mis_pool", pool_size=5, **DB_CONFIG)
