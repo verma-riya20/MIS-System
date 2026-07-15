@@ -1,5 +1,5 @@
 // src/hooks/useMisData.js
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const API_BASE = "https://mis-system-aysc.onrender.com";
 
