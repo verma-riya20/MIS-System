@@ -59,9 +59,9 @@ export default function OverviewTab({ filtered, schemeStats, schemeColors }) {
   })();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="overview-layout" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Row 1: Budget by scheme + Status donut */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+      <div className="overview-row overview-row-1" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
         <div className="chart-card">
           <h3 className="chart-title">Budget by scheme (₹ Cr)</h3>
           <ResponsiveContainer width="100%" height={240}>
@@ -135,7 +135,7 @@ export default function OverviewTab({ filtered, schemeStats, schemeColors }) {
       </div>
 
       {/* Row 3: Agency chart + Utilisation */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="overview-row overview-row-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <div className="chart-card">
           <h3 className="chart-title">Top agencies by budget (₹ Cr)</h3>
           <ResponsiveContainer width="100%" height={260}>

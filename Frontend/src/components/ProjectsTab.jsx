@@ -65,7 +65,7 @@ export default function ProjectsTab({ projects, schemeShort, schemeColors, schem
   return (
     <div>
       {/* Search bar */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
+      <div className="projects-toolbar" style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1 }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", fontSize: 15 }}>🔍</span>
           <input

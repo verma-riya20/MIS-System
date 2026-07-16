@@ -63,9 +63,9 @@ export default function BudgetTab({ projects, schemeShort, schemeColors }) {
   const totalPlan = projects.reduce((a, p) => a + p.plannedFY2526.total, 0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="budget-layout" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Summary row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+      <div className="budget-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
         {[
           { label: "Total sanctioned budget", value: `₹${totalBudget.toFixed(0)} Cr`, color: "#534AB7" },
           { label: "Expended till 2024-25", value: `₹${totalExpend.toFixed(0)} Cr`, color: "#1D9E75" },
@@ -81,7 +81,7 @@ export default function BudgetTab({ projects, schemeShort, schemeColors }) {
       </div>
 
       {/* Scheme budget vs expend stacked */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="budget-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <div className="chart-card">
           <h3 className="chart-title">Budget, expenditure & planned by scheme (₹ Cr)</h3>
           <ResponsiveContainer width="100%" height={260}>

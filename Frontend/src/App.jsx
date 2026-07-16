@@ -298,6 +298,21 @@ export default function App() {
           </div>
         </header>
 
+        <div className="mobile-tabbar" role="tablist" aria-label="Main navigation">
+          {TABS.map((tab, i) => (
+            <button
+              key={tab}
+              type="button"
+              className={`mobile-tab ${activeTab === i ? "active" : ""}`}
+              onClick={() => setActiveTab(i)}
+              aria-pressed={activeTab === i}
+            >
+              <span className="mobile-tab-icon">{["📊", "📋", "💰"][i]}</span>
+              <span>{tab}</span>
+            </button>
+          ))}
+        </div>
+
         {/* KPI grid */}
         <div className="kpi-grid">
           <KPICard
