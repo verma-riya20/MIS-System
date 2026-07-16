@@ -39,6 +39,7 @@ export default function App() {
   const [filterDueSoon, setFilterDueSoon] = useState(false);
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
+  const [flashMessage, setFlashMessage] = useState("");
 
   // null = modal closed · {} = "add new" mode · {...project} = "edit" mode
   const [modalProject, setModalProject] = useState(null);
@@ -58,18 +59,27 @@ export default function App() {
   }
 
   useEffect(() => {
+    if (!flashMessage) return undefined;
+    const timer = window.setTimeout(() => setFlashMessage(""), 2600);
+    return () => window.clearTimeout(timer);
+  }, [flashMessage]);
+
+  useEffect(() => {
     sessionStorage.setItem(ACTIVE_TAB_KEY, String(activeTab));
   }, [activeTab]);
 
   async function handleSave(formData, existingId) {
     if (existingId) {
       await updateProject(existingId, formData);
+      setFlashMessage("Project updated successfully.");
     } else {
       await createProject(formData);
+      setFlashMessage("Project added successfully.");
     }
   }
   async function handleDelete(id) {
     await deleteProject(id);
+    setFlashMessage("Project deleted successfully.");
   }
 
   // Reactive replacements for the old module-level getSchemeStats()/getAgencyStats()
@@ -284,6 +294,12 @@ export default function App() {
 
       {/* Main content */}
       <main className="main">
+        {flashMessage && (
+          <div className="page-flash" role="status" aria-live="polite">
+            {flashMessage}
+          </div>
+        )}
+
         {/* Header */}
         <header className="page-header">
           <div>

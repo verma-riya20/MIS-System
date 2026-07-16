@@ -6,6 +6,7 @@ const API_BASE = "https://mis-system-aysc.onrender.com/api";
 // Same fallback colors as before, in case /api/schemes is slow to load
 const FALLBACK_COLORS = ["#534AB7", "#185FA5", "#1D9E75", "#993556", "#639922", "#D85A30"];
 const FALLBACK_LIGHT  = ["#EEEDFE", "#E6F1FB", "#E1F5EE", "#FBEAF0", "#EAF3DE", "#FAECE7"];
+const EMPTY_EXP = { genGia: 0, dapsc: 0, dapst: 0, ner: 0, total: 0 };
 
 async function readJsonResponse(res) {
   const contentType = res.headers.get("content-type") || "";
@@ -15,6 +16,34 @@ async function readJsonResponse(res) {
 
   const text = await res.text();
   return text ? { error: text } : {};
+}
+
+function normalizeProject(formData, id) {
+  const expenditure = formData.expenditure || {};
+  const plannedFY2526 = formData.plannedFY2526 || {};
+
+  const mapExp = (value) => ({
+    genGia: Number(value.genGia) || 0,
+    dapsc: Number(value.dapsc) || 0,
+    dapst: Number(value.dapst) || 0,
+    ner: Number(value.ner) || 0,
+    total: Number(value.genGia || 0) + Number(value.dapsc || 0) + Number(value.dapst || 0) + Number(value.ner || 0),
+  });
+
+  return {
+    id,
+    name: formData.name || "",
+    agency: formData.agency || "",
+    scheme: Number(formData.scheme) || 0,
+    budget: Number(formData.budget) || 0,
+    expenditure: mapExp(expenditure),
+    plannedFY2526: mapExp(plannedFY2526),
+    status: formData.projectType === "new_proposal" ? "New" : "Ongoing",
+    remainingYears: formData.remainingYears == null ? 0 : Number(formData.remainingYears) || 0,
+    dealingOfficer: formData.dealingOfficer || "",
+    currentStatus: formData.currentStatus || "",
+    nextPrsgDue: formData.nextPrsgDue || "",
+  };
 }
  
 export function useMisData() {
@@ -66,7 +95,8 @@ export function useMisData() {
     });
     const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to create project");
-    await load({ silent: true });
+    const created = normalizeProject(formData, data.id);
+    setProjects((current) => [...current, created]);
     return data;
   }
  
@@ -79,7 +109,8 @@ export function useMisData() {
     });
     const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to update project");
-    await load({ silent: true });
+    const updated = normalizeProject(formData, id);
+    setProjects((current) => current.map((project) => (project.id === id ? updated : project)));
     return data;
   }
  
@@ -91,7 +122,7 @@ export function useMisData() {
     });
     const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to delete project");
-    await load({ silent: true });
+    setProjects((current) => current.filter((project) => project.id !== id));
     return data;
   }
  
