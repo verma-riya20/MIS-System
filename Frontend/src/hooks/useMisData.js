@@ -6,6 +6,16 @@ const API_BASE = "https://mis-system-aysc.onrender.com/api";
 // Same fallback colors as before, in case /api/schemes is slow to load
 const FALLBACK_COLORS = ["#534AB7", "#185FA5", "#1D9E75", "#993556", "#639922", "#D85A30"];
 const FALLBACK_LIGHT  = ["#EEEDFE", "#E6F1FB", "#E1F5EE", "#FBEAF0", "#EAF3DE", "#FAECE7"];
+
+async function readJsonResponse(res) {
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return res.json();
+  }
+
+  const text = await res.text();
+  return text ? { error: text } : {};
+}
  
 export function useMisData() {
   const [projects, setProjects]       = useState([]);
@@ -50,7 +60,7 @@ export function useMisData() {
       headers,
       body: JSON.stringify(formData),
     });
-    const data = await res.json();
+    const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to create project");
     await load();
     return data;
@@ -63,7 +73,7 @@ export function useMisData() {
       headers,
       body: JSON.stringify(formData),
     });
-    const data = await res.json();
+    const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to update project");
     await load();
     return data;
@@ -75,7 +85,7 @@ export function useMisData() {
       method: "DELETE",
       headers,
     });
-    const data = await res.json();
+    const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to delete project");
     await load();
     return data;

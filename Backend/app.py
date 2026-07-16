@@ -16,7 +16,7 @@
 import os
 from dotenv import load_dotenv
 load_dotenv()
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import pooling
@@ -70,6 +70,130 @@ def n(v):
     return float(v) if v is not None else 0.0
 
 
+def to_int(value, default=None):
+    if value in (None, ""):
+        return default
+    return int(value)
+
+
+def to_float(value, default=0.0):
+    if value in (None, ""):
+        return default
+    return float(value)
+
+
+def to_text(value):
+    return (value or "").strip()
+
+
+def parse_project_payload(data):
+    name = to_text(data.get("name") or data.get("project_name"))
+    if not name:
+        raise ValueError("Project name is required.")
+
+    scheme = data.get("scheme")
+    if scheme in (None, ""):
+        raise ValueError("Please select a scheme category.")
+
+    budget = data.get("budget")
+    if budget in (None, ""):
+        raise ValueError("Budget is required.")
+
+    project_type = data.get("projectType") or data.get("project_type") or "ongoing"
+    if project_type not in ("ongoing", "new_proposal"):
+        project_type = "ongoing"
+
+    return {
+        "project_name": name,
+        "implementing_agency": to_text(data.get("agency") or data.get("implementing_agency")),
+        "category_id": int(scheme) + 1,
+        "total_budget_outlay_cr": to_float(budget),
+        "remaining_duration_years": to_int(data.get("remainingYears") or data.get("remaining_duration_years")),
+        "dealing_officer": to_text(data.get("dealingOfficer") or data.get("dealing_officer")),
+        "current_status": to_text(data.get("currentStatus") or data.get("current_status")),
+        "next_prsg_due": to_text(data.get("nextPrsgDue") or data.get("next_prsg_due")),
+        "project_type": project_type,
+        "expenditure": data.get("expenditure") or {},
+        "plannedFY2526": data.get("plannedFY2526") or {},
+    }
+
+
+def exp_row_shape(values, fin_year):
+    return (
+        fin_year,
+        to_float(values.get("genGia")),
+        to_float(values.get("dapsc")),
+        to_float(values.get("dapst")),
+        to_float(values.get("ner")),
+        to_float(values.get("genGia")) + to_float(values.get("dapsc")) + to_float(values.get("dapst")) + to_float(values.get("ner")),
+    )
+
+
+def write_expenditure(cur, project_id, fin_year, values):
+    fin_year, gen_gia, dapsc, dapst, ner, total = exp_row_shape(values, fin_year)
+    cur.execute(
+        """
+        DELETE FROM expenditure
+        WHERE project_id = %s AND fin_year = %s
+        """,
+        (project_id, fin_year),
+    )
+    cur.execute(
+        """
+        INSERT INTO expenditure (project_id, fin_year, gia_gen, dapsc, dapst, ner, total)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (project_id, fin_year, gen_gia, dapsc, dapst, ner, total),
+    )
+
+
+def project_to_payload(row, exp_by_project):
+    def exp_shape(project_id, fin_year):
+        e = exp_by_project.get(project_id, {}).get(fin_year)
+        if not e:
+            return {"genGia": 0, "dapsc": 0, "dapst": 0, "ner": 0, "total": 0}
+        return {
+            "genGia": n(e['gia_gen']),
+            "dapsc": n(e['dapsc']),
+            "dapst": n(e['dapst']),
+            "ner": n(e['ner']),
+            "total": n(e['total']),
+        }
+
+    return {
+        "id": row['id'],
+        "name": row['project_name'],
+        "agency": row['implementing_agency'] or '',
+        "scheme": row['category_id'] - 1,
+        "budget": n(row['total_budget_outlay_cr']),
+        "expenditure": exp_shape(row['id'], '2024-25'),
+        "plannedFY2526": exp_shape(row['id'], '2025-26'),
+        "status": "Ongoing" if row['project_type'] == 'ongoing' else "New",
+        "remainingYears": row['remaining_duration_years'] or 0,
+        "dealingOfficer": row['dealing_officer'] or '',
+        "currentStatus": row['current_status'] or '',
+        "nextPrsgDue": row['next_prsg_due'] or '',
+    }
+
+
+def load_projects():
+    rows = query("""
+        SELECT p.id, p.sl_no, p.category_id, p.project_name, p.implementing_agency,
+               p.total_budget_outlay_cr, p.remaining_duration_years,
+               p.dealing_officer, p.current_status, p.next_prsg_due,
+               p.project_type
+        FROM projects p
+        ORDER BY p.category_id, p.project_type, p.sl_no
+    """)
+
+    exp_rows = query("SELECT * FROM expenditure")
+    exp_by_project = {}
+    for e in exp_rows:
+        exp_by_project.setdefault(e['project_id'], {})[e['fin_year']] = e
+
+    return [project_to_payload(row, exp_by_project) for row in rows]
+
+
 # ── API: All metadata your frontend needs (schemes, colors) ──
 @app.route('/api/schemes')
 def schemes():
@@ -83,53 +207,132 @@ def schemes():
 
 
 # ── API: All projects, shaped exactly like ALL_PROJECTS ──
-@app.route('/api/projects')
-def all_projects():
-    rows = query("""
-        SELECT p.id, p.sl_no, p.category_id, p.project_name, p.implementing_agency,
-               p.total_budget_outlay_cr, p.remaining_duration_years,
-               p.dealing_officer, p.current_status, p.next_prsg_due,
-               p.project_type
-        FROM projects p
-        ORDER BY p.category_id, p.project_type, p.sl_no
-    """)
+@app.route('/api/projects', methods=['GET', 'POST'])
+def projects_collection():
+    if request.method == 'GET':
+        return jsonify(load_projects())
 
-    # Pre-fetch all expenditure rows in one query, group by project_id
-    exp_rows = query("SELECT * FROM expenditure")
-    exp_by_project = {}
-    for e in exp_rows:
-        exp_by_project.setdefault(e['project_id'], {})[e['fin_year']] = e
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = parse_project_payload(data)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
-    def exp_shape(project_id, fin_year):
-        e = exp_by_project.get(project_id, {}).get(fin_year)
-        if not e:
-            return {"genGia": 0, "dapsc": 0, "dapst": 0, "ner": 0, "total": 0}
-        return {
-            "genGia": n(e['gia_gen']),
-            "dapsc":  n(e['dapsc']),
-            "dapst":  n(e['dapst']),
-            "ner":    n(e['ner']),
-            "total":  n(e['total']),
-        }
+    conn = pool.get_connection()
+    cur = conn.cursor(dictionary=True)
+    try:
+        conn.start_transaction()
 
-    result = []
-    for p in rows:
-        result.append({
-            "id": p['id'],
-            "name": p['project_name'],
-            "agency": p['implementing_agency'] or '',
-            "scheme": p['category_id'] - 1,  # categories are 1-indexed in MySQL, frontend expects 0-indexed
-            "budget": n(p['total_budget_outlay_cr']),
-            "expenditure": exp_shape(p['id'], '2024-25'),
-            "plannedFY2526": exp_shape(p['id'], '2025-26'),
-            "status": "Ongoing" if p['project_type'] == 'ongoing' else "New",
-            "remainingYears": p['remaining_duration_years'] or 0,
-            "dealingOfficer": p['dealing_officer'] or '',
-            "currentStatus": p['current_status'] or '',
-            "nextPrsgDue": p['next_prsg_due'] or '',
-        })
+        cur.execute(
+            "SELECT COALESCE(MAX(sl_no), 0) + 1 AS next_sl_no FROM projects WHERE category_id = %s",
+            (payload["category_id"],),
+        )
+        next_sl_no = cur.fetchone()["next_sl_no"]
 
-    return jsonify(result)
+        cur.execute(
+            """
+            INSERT INTO projects (
+                sl_no, category_id, project_name, implementing_agency,
+                total_budget_outlay_cr, remaining_duration_years,
+                dealing_officer, current_status, next_prsg_due, project_type
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                next_sl_no,
+                payload["category_id"],
+                payload["project_name"],
+                payload["implementing_agency"],
+                payload["total_budget_outlay_cr"],
+                payload["remaining_duration_years"],
+                payload["dealing_officer"],
+                payload["current_status"],
+                payload["next_prsg_due"],
+                payload["project_type"],
+            ),
+        )
+        project_id = cur.lastrowid
+
+        write_expenditure(cur, project_id, '2024-25', payload["expenditure"])
+        write_expenditure(cur, project_id, '2025-26', payload["plannedFY2526"])
+
+        conn.commit()
+        return jsonify({"ok": True, "id": project_id}), 201
+    except mysql.connector.Error as exc:
+        conn.rollback()
+        return jsonify({"error": str(exc)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route('/api/projects/<int:project_id>', methods=['PUT', 'DELETE'])
+def project_item(project_id):
+    if request.method == 'DELETE':
+        conn = pool.get_connection()
+        cur = conn.cursor()
+        try:
+            conn.start_transaction()
+            cur.execute("DELETE FROM expenditure WHERE project_id = %s", (project_id,))
+            cur.execute("DELETE FROM projects WHERE id = %s", (project_id,))
+            conn.commit()
+            return jsonify({"ok": True})
+        except mysql.connector.Error as exc:
+            conn.rollback()
+            return jsonify({"error": str(exc)}), 500
+        finally:
+            cur.close()
+            conn.close()
+
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = parse_project_payload(data)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    conn = pool.get_connection()
+    cur = conn.cursor(dictionary=True)
+    try:
+        conn.start_transaction()
+        cur.execute(
+            """
+            UPDATE projects
+            SET category_id = %s,
+                project_name = %s,
+                implementing_agency = %s,
+                total_budget_outlay_cr = %s,
+                remaining_duration_years = %s,
+                dealing_officer = %s,
+                current_status = %s,
+                next_prsg_due = %s,
+                project_type = %s
+            WHERE id = %s
+            """,
+            (
+                payload["category_id"],
+                payload["project_name"],
+                payload["implementing_agency"],
+                payload["total_budget_outlay_cr"],
+                payload["remaining_duration_years"],
+                payload["dealing_officer"],
+                payload["current_status"],
+                payload["next_prsg_due"],
+                payload["project_type"],
+                project_id,
+            ),
+        )
+
+        cur.execute("DELETE FROM expenditure WHERE project_id = %s", (project_id,))
+        write_expenditure(cur, project_id, '2024-25', payload["expenditure"])
+        write_expenditure(cur, project_id, '2025-26', payload["plannedFY2526"])
+
+        conn.commit()
+        return jsonify({"ok": True, "id": project_id})
+    except mysql.connector.Error as exc:
+        conn.rollback()
+        return jsonify({"error": str(exc)}), 500
+    finally:
+        cur.close()
+        conn.close()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
