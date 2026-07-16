@@ -28,13 +28,15 @@ export function useMisData() {
  
   const headers = { "Content-Type": "application/json" };
  
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       setError(null);
       const [pRes, sRes] = await Promise.all([
         fetch(`${API_BASE}/projects`, { headers }),
-        fetch(`${API_BASE}/schemes`,  { headers }),
+        fetch(`${API_BASE}/schemes`, { headers }),
       ]);
       if (!pRes.ok || !sRes.ok) throw new Error("API request failed");
       const pData = await pRes.json();
@@ -44,10 +46,12 @@ export function useMisData() {
       setSchemeShort(sData.SCHEME_SHORT);
       setSchemeColors(sData.SCHEME_COLORS);
       setSchemeLight(sData.SCHEME_LIGHT);
-      setLoading(false);
     } catch (err) {
       setError(err.message);
-      setLoading(false);
+    } finally {
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, []);
  
@@ -62,7 +66,7 @@ export function useMisData() {
     });
     const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to create project");
-    await load();
+    await load({ silent: true });
     return data;
   }
  
@@ -75,7 +79,7 @@ export function useMisData() {
     });
     const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to update project");
-    await load();
+    await load({ silent: true });
     return data;
   }
  
@@ -87,7 +91,7 @@ export function useMisData() {
     });
     const data = await readJsonResponse(res);
     if (!res.ok) throw new Error(data.error || "Failed to delete project");
-    await load();
+    await load({ silent: true });
     return data;
   }
  
