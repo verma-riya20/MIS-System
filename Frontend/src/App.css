@@ -8,21 +8,37 @@
 
 /* ── CSS variables ── */
 :root {
-  --bg-page: #f5f4f1;
-  --bg-card: #ffffff;
-  --bg-surface: #f8f7f5;
-  --bg-hover: #f0eeeb;
-  --bg-sidebar: #1a1a2e;
-  --bg-sidebar-hover: rgba(255, 255, 255, 0.07);
-  --bg-sidebar-active: rgba(255, 255, 255, 0.12);
-  --text-primary: #1a1a2e;
-  --text-secondary: #6b6b80;
-  --text-sidebar: rgba(255, 255, 255, 0.85);
-  --text-sidebar-muted: rgba(255, 255, 255, 0.45);
-  --border: #e8e6e0;
-  --border-sidebar: rgba(255, 255, 255, 0.1);
+  --bg-page: #f4f1ea;
+  --bg-card: #fcfaf6;
+  --bg-surface: #f8f5ee;
+  --bg-hover: #efe9df;
+  --bg-sidebar: #f0ebe2;
+  --bg-sidebar-hover: rgba(83, 74, 183, 0.08);
+  --bg-sidebar-active: rgba(83, 74, 183, 0.14);
+  --text-primary: #202634;
+  --text-secondary: #636b7a;
+  --text-sidebar: #202634;
+  --text-sidebar-muted: #6d7281;
+  --border: #ddd5c8;
+  --border-sidebar: #d8d0c3;
   --accent: #534ab7;
   --sidebar-width: 240px;
+}
+
+[data-theme="light"] {
+  --bg-page: #f4f1ea;
+  --bg-card: #fcfaf6;
+  --bg-surface: #f8f5ee;
+  --bg-hover: #efe9df;
+  --bg-sidebar: #f0ebe2;
+  --bg-sidebar-hover: rgba(83, 74, 183, 0.08);
+  --bg-sidebar-active: rgba(83, 74, 183, 0.14);
+  --text-primary: #202634;
+  --text-secondary: #636b7a;
+  --text-sidebar: #202634;
+  --text-sidebar-muted: #6d7281;
+  --border: #ddd5c8;
+  --border-sidebar: #d8d0c3;
 }
 
 [data-theme="dark"] {
@@ -101,7 +117,7 @@ body {
 .brand-title {
   font-size: 13px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-sidebar);
   letter-spacing: 0.01em;
 }
 
@@ -197,8 +213,8 @@ body {
 }
 
 .filter-select option {
-  background: #1a1a2e;
-  color: white;
+  background: var(--bg-card);
+  color: var(--text-primary);
 }
 
 .filter-result-badge {
