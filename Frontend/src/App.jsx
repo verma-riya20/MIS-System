@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMisData } from "./hooks/useMisData";
 import { getSchemeStats, getAgencyStats } from "./utils/stats";
 import KPICard from "./components/KPICard";
@@ -10,6 +10,7 @@ import ProjectModal from "./components/ProjectModal";
 import "./App.css";
 
 const TABS = ["Overview", "Projects", "Budget & Expenditure"];
+const ACTIVE_TAB_KEY = "mis.activeTab";
 
 export default function App() {
   const {
@@ -26,7 +27,11 @@ export default function App() {
     deleteProject,
   } = useMisData();
 
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = sessionStorage.getItem(ACTIVE_TAB_KEY);
+    const parsed = Number(saved);
+    return Number.isInteger(parsed) && parsed >= 0 && parsed < TABS.length ? parsed : 0;
+  });
   const [globalSearch, setGlobalSearch] = useState("");
   const [filterScheme, setFilterScheme] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -51,6 +56,11 @@ export default function App() {
     setModalOpen(false);
     setModalProject(null);
   }
+
+  useEffect(() => {
+    sessionStorage.setItem(ACTIVE_TAB_KEY, String(activeTab));
+  }, [activeTab]);
+
   async function handleSave(formData, existingId) {
     if (existingId) {
       await updateProject(existingId, formData);
@@ -130,7 +140,9 @@ export default function App() {
     budgetMin !== "" ||
     budgetMax !== "";
 
-  if (loading) {
+  const isInitialLoading = loading && ALL_PROJECTS.length === 0;
+
+  if (isInitialLoading) {
     return (
       <div className="app-loading">
         <p>Loading data from MySQL…</p>
@@ -138,7 +150,7 @@ export default function App() {
     );
   }
 
-  if (error) {
+  if (error && ALL_PROJECTS.length === 0) {
     return (
       <div className="app-loading app-error">
         <p>Could not reach the API at localhost:5000.</p>
