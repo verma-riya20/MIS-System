@@ -25,16 +25,20 @@
   --sidebar-width: 240px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-page: #111118;
-    --bg-card: #1c1c28;
-    --bg-surface: #16161f;
-    --bg-hover: #22222e;
-    --text-primary: #e8e6ff;
-    --text-secondary: #8888aa;
-    --border: #2a2a3a;
-  }
+[data-theme="dark"] {
+  --bg-page: #111118;
+  --bg-card: #1c1c28;
+  --bg-surface: #16161f;
+  --bg-hover: #22222e;
+  --bg-sidebar: #0f1020;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --bg-sidebar-active: rgba(255, 255, 255, 0.14);
+  --text-primary: #e8e6ff;
+  --text-secondary: #8888aa;
+  --text-sidebar: rgba(255, 255, 255, 0.88);
+  --text-sidebar-muted: rgba(255, 255, 255, 0.5);
+  --border: #2a2a3a;
+  --border-sidebar: rgba(255, 255, 255, 0.08);
 }
 
 * {
@@ -331,6 +335,34 @@ body {
   letter-spacing: -0.01em;
 }
 
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.theme-toggle:hover {
+  background: var(--bg-surface);
+}
+
+.theme-toggle-icon {
+  font-size: 14px;
+}
+
+.theme-toggle-label {
+  line-height: 1;
+}
+
 .page-flash {
   margin-bottom: 14px;
   padding: 10px 14px;
@@ -448,6 +480,11 @@ body {
     width: 100%;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .theme-toggle {
+    width: 100%;
+    justify-content: center;
   }
 
   .global-search {
@@ -579,6 +616,10 @@ body {
 
   .projects-toolbar .btn-primary {
     padding-inline: 14px;
+  }
+
+  .theme-toggle-label {
+    display: none;
   }
 
   .modal-overlay {

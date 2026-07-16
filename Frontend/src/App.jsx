@@ -11,6 +11,14 @@ import "./App.css";
 
 const TABS = ["Overview", "Projects", "Budget & Expenditure"];
 const ACTIVE_TAB_KEY = "mis.activeTab";
+const THEME_KEY = "mis.theme";
+
+function getInitialTheme() {
+  if (typeof window === "undefined") return "light";
+  const saved = window.localStorage.getItem(THEME_KEY);
+  if (saved === "light" || saved === "dark") return saved;
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 export default function App() {
   const {
@@ -40,6 +48,7 @@ export default function App() {
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [flashMessage, setFlashMessage] = useState("");
+  const [theme, setTheme] = useState(getInitialTheme);
 
   // null = modal closed · {} = "add new" mode · {...project} = "edit" mode
   const [modalProject, setModalProject] = useState(null);
@@ -68,6 +77,12 @@ export default function App() {
     sessionStorage.setItem(ACTIVE_TAB_KEY, String(activeTab));
   }, [activeTab]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+
   async function handleSave(formData, existingId) {
     if (existingId) {
       await updateProject(existingId, formData);
@@ -80,6 +95,10 @@ export default function App() {
   async function handleDelete(id) {
     await deleteProject(id);
     setFlashMessage("Project deleted successfully.");
+  }
+
+  function toggleTheme() {
+    setTheme((current) => (current === "dark" ? "light" : "dark"));
   }
 
   // Reactive replacements for the old module-level getSchemeStats()/getAgencyStats()
@@ -307,6 +326,10 @@ export default function App() {
             <p className="page-sub">Scheme for Capacity Building in Electronics, ICT & Allied Technologies</p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="Toggle theme">
+              <span className="theme-toggle-icon">{theme === "dark" ? "☀" : "☾"}</span>
+              <span className="theme-toggle-label">{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+            </button>
             <div className="global-search">
               <span className="global-search-icon">⌕</span>
               <input
